@@ -294,31 +294,156 @@ void test_create_object_with_ptr_to_other_object() {
     assert(oc.getPtrOffsets().size() == 0);
 }
 
-void test_performance_many_creations() {
+void test_create_ptr_of_object_and_add_it_to_vector() {
+    Container<BigObject> c;
+
+    {
+        std::vector<ContPtr<BigObject>> v1;
+
+        for (int i = 0; i < 3U; ++i) {
+            ContPtr<BigObject> p = c.make(static_cast<float>(i), 2U);
+            v1.emplace_back(p);
+        }
+
+        assert(3U == v1.size());
+        assert(0.0f == v1[0]->fValue[0]);
+        assert(1.0f == v1[1]->fValue[0]);
+        assert(2.0f == v1[2]->fValue[0]);
+
+        assert(c.getObjects().size() == 3);
+
+        assert(c.getRefCounts().size() == 3);
+        assert(c.getRefCounts()[0] == 1);
+        assert(c.getRefCounts()[1] == 1);
+        assert(c.getRefCounts()[2] == 1);
+
+        assert(c.getPtrAddresses().size() == 3);
+        assert(c.getPtrAddresses()[0] == &(v1[1]));
+        assert(c.getPtrAddresses()[1] == &(v1[0]));
+        assert(c.getPtrAddresses()[2] == &(v1[2]));
+
+        assert(c.getPtrOffsets().size() == 3);
+        assert(c.getPtrOffsets()[0] == 1);
+        assert(c.getPtrOffsets()[1] == 0);
+        assert(c.getPtrOffsets()[2] == 2);
+    }
+
+    assert(c.getObjects().size() == 0);
+    assert(c.getRefCounts().size() == 0);
+    assert(c.getPtrAddresses().size() == 0);
+    assert(c.getPtrOffsets().size() == 0);
+}
+
+void test_performance_many_creations_with_regular_vector_and_pointers() {
     unsigned int count = 200000;
 
-    printf("-- Start\n");
+    auto t1 = std::chrono::steady_clock::now();
+
     std::vector<BigObject*> v1;
+
+    auto t2 = std::chrono::steady_clock::now();
 
     for (unsigned int i = 0; i < count; ++i) {
         BigObject* p = new BigObject(1.0f, 1U);
         v1.emplace_back(p);
     }
 
-    printf("    -- Finished with new\n");
+    auto t3 = std::chrono::steady_clock::now();
+
+    for (unsigned int i = 0; i < count; ++i) {
+        delete v1[i];
+    }
+
+    auto t4 = std::chrono::steady_clock::now();
+
+    v1.clear();
+
+    auto t5 = std::chrono::steady_clock::now();
+
+    printf("\n");
+    printf("  -- construction: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count());
+    printf("  -- filling: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t3 - t2).count());
+    printf("  -- destroy objects: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count());
+    printf("  -- destroy vec: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t5 - t4).count());
+}
+
+void test_performance_many_creations_with_experimental_container() {
+    unsigned int count = 200000;
+
+    auto t1 = std::chrono::steady_clock::now();
 
     Container<BigObject> c2;
     std::vector<ContPtr<BigObject>> v2;
+
+    auto t2 = std::chrono::steady_clock::now();
 
     for (unsigned int i = 0; i < count; ++i) {
         ContPtr<BigObject> p = c2.make(2.0f, 2U);
         v2.emplace_back(p);
     }
 
-    printf("    -- Finished with Container\n");
+    auto t3 = std::chrono::steady_clock::now();
+
+    c2.destroy();
+
+    auto t4 = std::chrono::steady_clock::now();
+
+    v2.clear();
+
+    auto t5 = std::chrono::steady_clock::now();
+
+    printf("\n");
+    printf("  -- construction: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count());
+    printf("  -- filling: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t3 - t2).count());
+    printf("  -- destroy cont: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t4 - t3).count());
+    printf("  -- destroy vec: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t5 - t4).count());
+}
+
+void test_performance_compute_operations_with_non_linear_memory_with_regular_vector_and_pointers() {
+    unsigned int count = 200000;
+    unsigned int countObstruct = 100U;
+
+    std::vector<BigObject*> v1;
+    std::vector<BigObject*> vObstruct;
+
+    for (unsigned int i = 0; i < count; ++i) {
+        BigObject* p = new BigObject(1.0f, 1U);
+        v1.emplace_back(p);
+
+        for (unsigned int i = 0; i < countObstruct; ++i) {
+            BigObject* pO = new BigObject(1.0f, 1U);
+            vObstruct.emplace_back(pO);
+        }
+    }
+
+    auto t1 = std::chrono::steady_clock::now();
+
+    unsigned int sumU = 0U;
+    unsigned int mulU = 1U;
+    float sumF = 0.0f;
+    float mulF = 1.0f;
+
+    for (unsigned int k = 0; k < 10U; ++k) {
+        for (unsigned int i = 0; i < count; ++i) {
+            for (unsigned int j = 0; j < 10U; ++j) {
+                sumU += v1[i]->uValue[j];
+                mulU *= v1[i]->uValue[j];
+
+                sumF += v1[i]->fValue[j];
+                mulF *= v1[i]->fValue[j];
+            }
+        }
+    }
+
+    auto t2 = std::chrono::steady_clock::now();
 
 
-    printf("-- Start destroying\n");
+    unsigned int total = count * countObstruct;
+    for (unsigned int i = 0; i < total; ++i) {
+        delete vObstruct[i];
+    }
+
+    vObstruct.clear();
 
     for (unsigned int i = 0; i < count; ++i) {
         delete v1[i];
@@ -326,12 +451,65 @@ void test_performance_many_creations() {
 
     v1.clear();
 
-    printf("    -- Finihsed new destroy\n");
+    printf("\n");
+    printf("  -- sumF: %f, mulF: %f\n", (double)sumF, (double)mulF);
+    printf("  -- sumU: %d, mulU: %d\n", sumU, mulU);
+    printf("  -- execution: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count());
+}
 
-    c2.destroy();
-    v2.clear();
+void test_performance_compute_operations_with_linear_memory_with_experimental_container() {
+    unsigned int count = 200000;
+    unsigned int countObstruct = 100U;
 
-    printf("    -- Finihsed container destroy\n");
+    Container<BigObject> c1;
+    std::vector<ContPtr<BigObject>> v1;
+
+    std::vector<BigObject*> vObstruct;
+
+    for (unsigned int i = 0; i < count; ++i) {
+        ContPtr<BigObject> p = c1.make(1.0f, 1U);
+        v1.emplace_back(p);
+
+        for (unsigned int i = 0; i < countObstruct; ++i) {
+            BigObject* pO = new BigObject(1.0f, 1U);
+            vObstruct.emplace_back(pO);
+        }
+    }
+
+    auto t1 = std::chrono::steady_clock::now();
+
+    unsigned int sumU = 0U;
+    unsigned int mulU = 1U;
+    float sumF = 0.0f;
+    float mulF = 1.0f;
+
+    for (unsigned int k = 0; k < 10U; ++k) {
+        for (unsigned int i = 0; i < count; ++i) {
+            for (unsigned int j = 0; j < 10U; ++j) {
+                sumU += v1[i]->uValue[j];
+                mulU *= v1[i]->uValue[j];
+
+                sumF += v1[i]->fValue[j];
+                mulF *= v1[i]->fValue[j];
+            }
+        }
+    }
+
+    auto t2 = std::chrono::steady_clock::now();
+
+    printf("\n");
+    printf("  -- sumF: %f, mulF: %f\n", (double)sumF, (double)mulF);
+    printf("  -- sumU: %d, mulU: %d\n", sumU, mulU);
+    printf("  -- execution: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count());
+
+    for (auto p : vObstruct) {
+        delete p;
+    }
+
+    vObstruct.clear();
+
+    c1.destroy();
+    v1.clear();
 }
 
 void execute_func(const char* name, const std::function<void()>& f) {
@@ -353,5 +531,10 @@ int main() {
     execute_func("test_one_element_two_pointer", test_one_element_two_pointer);
     execute_func("test_one_element_two_pointer_and_third_deleted_first", test_one_element_two_pointer_and_third_deleted_first);
     execute_func("test_create_object_with_ptr_to_other_object", test_create_object_with_ptr_to_other_object);
-    execute_func("test_performance_many_creations", test_performance_many_creations);
+    execute_func("test_create_ptr_of_object_and_add_it_to_vector", test_create_ptr_of_object_and_add_it_to_vector);
+
+    execute_func("test_performance_many_creations_with_regular_vector_and_pointers", test_performance_many_creations_with_regular_vector_and_pointers);
+    execute_func("test_performance_many_creations_with_experimental_container", test_performance_many_creations_with_experimental_container);
+    execute_func("test_performance_compute_operations_with_non_linear_memory_with_regular_vector_and_pointers", test_performance_compute_operations_with_non_linear_memory_with_regular_vector_and_pointers);
+    execute_func("test_performance_compute_operations_with_linear_memory_with_experimental_container", test_performance_compute_operations_with_linear_memory_with_experimental_container);
 }

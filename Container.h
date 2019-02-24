@@ -101,10 +101,14 @@ private:
         size_t last_ptr = ptrAddress_.size() - 1;
         size_t remove_ptr = ptrOffset;
 
+        unsigned int lastIndex = ptrAddress_[remove_ptr]->index_;
+
         if (remove_ptr != last_ptr) {
             ptrAddress_[remove_ptr] = ptrAddress_[last_ptr];
             ptrOffset_[remove_ptr] = ptrOffset_[last_ptr];
         }
+
+        ptrAddress_[remove_ptr]->index_ = lastIndex;
 
         ptrAddress_.pop_back();
         ptrOffset_.pop_back();
