@@ -103,10 +103,8 @@ private:
 
         unsigned int lastIndex = ptrAddress_[remove_ptr]->index_;
 
-        if (remove_ptr != last_ptr) {
-            ptrAddress_[remove_ptr] = ptrAddress_[last_ptr];
-            ptrOffset_[remove_ptr] = ptrOffset_[last_ptr];
-        }
+        std::swap(ptrAddress_[remove_ptr], ptrAddress_[last_ptr]);
+        std::swap(ptrOffset_[remove_ptr], ptrOffset_[last_ptr]);
 
         ptrAddress_[remove_ptr]->index_ = lastIndex;
 
