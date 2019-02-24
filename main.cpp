@@ -1,7 +1,9 @@
-#include <stdio.h>
-
 #include "Container.h"
 #include "ContPtr.h"
+
+#include <stdio.h>
+#include <chrono>
+#include <functional>
 
 class BigObject final {
 public:
@@ -332,14 +334,24 @@ void test_performance_many_creations() {
     printf("    -- Finihsed container destroy\n");
 }
 
-int main() {
-    test_create_two_elements();
-    test_assign_two_elements();
-    test_equal_two_elements();
-    test_not_equal_two_elements();
-    test_one_element_two_pointer();
-    test_one_element_two_pointer_and_third_deleted_first();
-    test_create_object_with_ptr_to_other_object();
+void execute_func(const char* name, const std::function<void()>& f) {
+    auto start = std::chrono::steady_clock::now();
 
-    test_performance_many_creations();
+    f();
+
+    auto finish = std::chrono::steady_clock::now();
+    double elapsedSeconds = std::chrono::duration_cast<std::chrono::duration<double> >(finish - start).count();
+
+    printf("%s (%fs)\n", name, elapsedSeconds);
+}
+
+int main() {
+    execute_func("test_create_two_elements", test_create_two_elements);
+    execute_func("test_assign_two_elements", test_assign_two_elements);
+    execute_func("test_equal_two_elements", test_equal_two_elements);
+    execute_func("test_not_equal_two_elements", test_not_equal_two_elements);
+    execute_func("test_one_element_two_pointer", test_one_element_two_pointer);
+    execute_func("test_one_element_two_pointer_and_third_deleted_first", test_one_element_two_pointer_and_third_deleted_first);
+    execute_func("test_create_object_with_ptr_to_other_object", test_create_object_with_ptr_to_other_object);
+    execute_func("test_performance_many_creations", test_performance_many_creations);
 }
