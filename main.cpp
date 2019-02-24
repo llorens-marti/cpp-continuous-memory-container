@@ -1,6 +1,7 @@
 #include <stdio.h>
 
-#include "ContainerValue.h"
+#include "Container.h"
+#include "ContPtr.h"
 
 class BigObject final {
 public:
@@ -110,7 +111,7 @@ void test_assign_two_elements() {
 
         assert(c.getPtrOffsets().size() == 2);
         assert(c.getPtrOffsets()[0] == 0);
-        assert(c.getPtrOffsets()[1] == 0);        
+        assert(c.getPtrOffsets()[1] == 0);
     }
 
     assert(c.getObjects().size() == 0);

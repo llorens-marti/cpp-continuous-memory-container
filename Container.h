@@ -2,97 +2,7 @@
 
 #include <vector>
 
-template <class T> class Container;
-
-template<class T>
-class ContPtr final {
-public:
-    friend Container<T>;
-
-    ContPtr() = delete;
-    
-    ContPtr(const ContPtr<T>& obj)
-    : cont_(obj.cont_)
-    , index_(obj.index_)
-    {
-        unsigned int objIndex = cont_->ptrOffset_[index_];
-        cont_->ptrAddress_.emplace_back(this);
-        cont_->ptrOffset_.emplace_back(objIndex);
-        index_ = cont_->ptrOffset_.size() - 1;
-
-        cont_->incRefOf(index_);
-    }
-
-    ContPtr(ContPtr<T>&& obj)
-    : cont_(obj.cont_)
-    , index_(obj.index_)
-    {
-
-        cont_->ptrAddress_[index_] = this;
-
-        obj.cont_ = nullptr;
-        obj.index_ = 0U;
-    }
-    
-    explicit ContPtr(Container<T>* contPtr, unsigned int index)
-    : cont_(contPtr)
-    , index_(index)
-    {
-        cont_->incRefOf(index_);
-    }
-
-    template<typename A> ContPtr(A) = delete;
-
-    ~ContPtr() {
-        if (cont_ == nullptr) {
-            return;
-        }
-
-        cont_->decRefOf(index_);
-
-        if (cont_->getRefCount(index_) == 0) {
-            cont_->clearContainedElement(index_);
-        }
-        
-        cont_->clearPointer(index_);
-    }
-
-    const T* operator->() const {
-        unsigned int eleIndex = cont_->ptrOffset_[index_];
-        return &(cont_->c_[eleIndex]);
-    }
-
-    bool operator==(const ContPtr<T>& obj) const {
-        return  (cont_ == obj.cont_) && 
-                (cont_->ptrOffset_[index_] == cont_->ptrOffset_[obj.index_]);
-    }
-
-    bool operator!=(const ContPtr<T>& obj) const {
-        return  !((*this) == obj);
-    }
-
-    const ContPtr<T>& operator=(const ContPtr<T>& obj) {
-        cont_->decRefOf(index_);
-        
-        if (cont_->getRefCount(index_) == 0) {
-            cont_->clearContainedElement(index_);
-        }
-
-        cont_ = obj.cont_;
-
-        cont_->ptrOffset_[index_] = cont_->ptrOffset_[obj.index_];
-
-        cont_->incRefOf(index_);
-
-        return *this;
-    }
-
-private:
-    Container<T>* cont_;
-    unsigned int index_;
-};
-
-
+template <class T> class ContPtr;
 
 template<class T>
 class Container final {
@@ -111,17 +21,17 @@ public:
 
     template<typename... Args>
     ContPtr<T> make(Args&&... args) {
-        c_.emplace_back(T(std::forward<Args>(args)...));
+        objects_.emplace_back(T(std::forward<Args>(args)...));
         refCount_.emplace_back(0U);
-        
-        unsigned int index = static_cast<unsigned int>(c_.size() - 1);
+
+        unsigned int index = static_cast<unsigned int>(objects_.size() - 1);
 
         ptrOffset_.emplace_back(index);
 
         ContPtr<T> ptr(this, ptrOffset_.size() - 1);
 
         ptrAddress_.emplace_back(&ptr);
-        
+
         return std::move(ptr);
     }
 
@@ -138,12 +48,12 @@ public:
     }
 
     const std::vector<T>& getObjects() const {
-        return c_;
+        return objects_;
     }
 
     void destroy() {
         for (ContPtr<T>* ptr : ptrAddress_) {
-            ptr->cont_ = nullptr;
+            ptr->c_ = nullptr;
         }
     }
 
@@ -164,15 +74,15 @@ private:
 
     unsigned int getRefCount(unsigned int ptrOffset) const {
         unsigned int eleIndex = ptrOffset_[ptrOffset];
-        return refCount_[eleIndex];   
+        return refCount_[eleIndex];
     }
 
-    void clearContainedElement(unsigned int ptrOffset) {            
-        size_t last_element = c_.size() - 1;
+    void clearContainedElement(unsigned int ptrOffset) {
+        size_t last_element = objects_.size() - 1;
         size_t remove_element = ptrOffset_[ptrOffset];
 
         if (remove_element != last_element) {
-            c_[remove_element] = c_[last_element];
+            objects_[remove_element] = objects_[last_element];
             refCount_[remove_element] = refCount_[last_element];
 
             size_t count = ptrOffset_.size();
@@ -183,7 +93,7 @@ private:
             }
         }
 
-        c_.pop_back();
+        objects_.pop_back();
         refCount_.pop_back();
     }
 
@@ -204,5 +114,5 @@ private:
     std::vector<ContPtr<T>*> ptrAddress_;
     std::vector<unsigned int> ptrOffset_;
     std::vector<unsigned int> refCount_;
-    std::vector<T> c_;
+    std::vector<T> objects_;
 };
