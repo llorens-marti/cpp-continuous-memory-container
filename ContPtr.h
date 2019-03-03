@@ -57,7 +57,7 @@ public:
         c_->clearPointer(index_);
     }
 
-    const T* operator->() const {
+    T* operator->() {
         unsigned int eleIndex = c_->ptrOffset_[index_];
         return &(c_->objects_[eleIndex]);
     }

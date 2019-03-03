@@ -33,6 +33,20 @@ public:
     ContPtr<BigObject> ptrBO;
 };
 
+class ObjWithRefSameType final {
+public:
+    ObjWithRefSameType() = delete;
+    explicit ObjWithRefSameType(float f, const std::vector<ContPtr<ObjWithRefSameType>> v)
+    : fValue(f)
+    , vPtr(v)
+    {}
+
+    template<typename A, typename B> ObjWithRefSameType(A, B) = delete;
+
+    float fValue;
+    std::vector<ContPtr<ObjWithRefSameType>> vPtr;
+};
+
 void test_create_two_elements() {
     Container<BigObject> c;
 
@@ -334,6 +348,26 @@ void test_create_ptr_of_object_and_add_it_to_vector() {
     assert(c.getPtrOffsets().size() == 0);
 }
 
+void test_two_objects_within_circular_reference_still_leak() {
+    Container<ObjWithRefSameType> c;
+
+    {
+        ContPtr<ObjWithRefSameType> cp1 = c.make(1.0f, std::vector<ContPtr<ObjWithRefSameType>>());
+        ContPtr<ObjWithRefSameType> cp2 = c.make(1.0f, std::vector<ContPtr<ObjWithRefSameType>>({cp1}));
+        cp1->vPtr.push_back(cp2);
+
+        assert(c.getObjects().size() == 2);
+        assert(c.getRefCounts().size() == 2);
+        assert(c.getPtrAddresses().size() == 4);
+        assert(c.getPtrOffsets().size() == 4);
+    }
+
+    assert(c.getObjects().size() == 2);
+    assert(c.getRefCounts().size() == 2);
+    assert(c.getPtrAddresses().size() == 2);
+    assert(c.getPtrOffsets().size() == 2);
+}
+
 void test_performance_many_creations_with_regular_vector_and_pointers() {
     unsigned int count = 200000;
 
@@ -532,6 +566,7 @@ int main() {
     execute_func("test_one_element_two_pointer_and_third_deleted_first", test_one_element_two_pointer_and_third_deleted_first);
     execute_func("test_create_object_with_ptr_to_other_object", test_create_object_with_ptr_to_other_object);
     execute_func("test_create_ptr_of_object_and_add_it_to_vector", test_create_ptr_of_object_and_add_it_to_vector);
+    execute_func("test_two_objects_within_circular_reference_still_leak", test_two_objects_within_circular_reference_still_leak);
 
     execute_func("test_performance_many_creations_with_regular_vector_and_pointers", test_performance_many_creations_with_regular_vector_and_pointers);
     execute_func("test_performance_many_creations_with_experimental_container", test_performance_many_creations_with_experimental_container);
