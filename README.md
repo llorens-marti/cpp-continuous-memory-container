@@ -12,6 +12,16 @@ This container aims to maintain these characteristics:
 
 The container provides its own shared pointers that will help iterate/access the elements stored on it.
 
+Future improvements:
+
+- Make sure that there is only one container per type and per thread.
+- Alow re-arrangement of stored elements at runtime.
+- Allow container to detect and remove circular references.
+
+Known problems:
+
+- Code in destructors make destruction code slow. Even if we invalidate everything we can not avoid calling the destructor.
+
 
 # How to compile
 
