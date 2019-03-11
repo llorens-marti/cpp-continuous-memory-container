@@ -420,7 +420,7 @@ void test_performance_many_creations_with_experimental_container() {
 
     auto t3 = std::chrono::steady_clock::now();
 
-    c2.destroy();
+    c2.invalidatePtrs();
 
     auto t4 = std::chrono::steady_clock::now();
 
@@ -544,7 +544,7 @@ void test_performance_compute_operations_with_linear_memory_with_experimental_co
 
     vObstruct.clear();
 
-    c1.destroy();
+    c1.invalidatePtrs();
     v1.clear();
 }
 
@@ -612,7 +612,7 @@ void test_performance_compute_operations_with_non_linear_memory_with_experimenta
 
     vObstruct.clear();
 
-    c1.destroy();
+    c1.invalidatePtrs();
     v1.clear();
 }
 

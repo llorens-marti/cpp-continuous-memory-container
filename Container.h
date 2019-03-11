@@ -53,7 +53,7 @@ public:
         return objects_;
     }
 
-    void destroy() {
+    void invalidatePtrs() {
         for (Ptr<T>* ptr : ptrAddress_) {
             ptr->c_ = nullptr;
         }
@@ -80,17 +80,17 @@ private:
     }
 
     void clearContainedElement(unsigned int ptrOffset) {
-        size_t last_element = objects_.size() - 1;
-        size_t remove_element = ptrOffset_[ptrOffset];
+        size_t lastElem = objects_.size() - 1;
+        size_t remElem = ptrOffset_[ptrOffset];
 
-        if (remove_element != last_element) {
-            objects_[remove_element] = objects_[last_element];
-            refCount_[remove_element] = refCount_[last_element];
+        if (remElem != lastElem) {
+            objects_[remElem] = objects_[lastElem];
+            refCount_[remElem] = refCount_[lastElem];
 
             size_t count = ptrOffset_.size();
             for (size_t i = 0; i < count; ++i) {
-                if (ptrOffset_[i] == last_element) {
-                    ptrOffset_[i] = remove_element;
+                if (ptrOffset_[i] == lastElem) {
+                    ptrOffset_[i] = remElem;
                 }
             }
         }
@@ -100,15 +100,15 @@ private:
     }
 
     void clearPointer(unsigned int ptrOffset) {
-        size_t last_ptr = ptrAddress_.size() - 1;
-        size_t remove_ptr = ptrOffset;
+        size_t lastPtr = ptrAddress_.size() - 1;
+        size_t remPtr = ptrOffset;
 
-        unsigned int lastIndex = ptrAddress_[remove_ptr]->index_;
+        unsigned int lastIndex = ptrAddress_[remPtr]->index_;
 
-        std::swap(ptrAddress_[remove_ptr], ptrAddress_[last_ptr]);
-        std::swap(ptrOffset_[remove_ptr], ptrOffset_[last_ptr]);
+        std::swap(ptrAddress_[remPtr], ptrAddress_[lastPtr]);
+        std::swap(ptrOffset_[remPtr], ptrOffset_[lastPtr]);
 
-        ptrAddress_[remove_ptr]->index_ = lastIndex;
+        ptrAddress_[remPtr]->index_ = lastIndex;
 
         ptrAddress_.pop_back();
         ptrOffset_.pop_back();
