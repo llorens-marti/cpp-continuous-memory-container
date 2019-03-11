@@ -2,16 +2,18 @@
 
 #include <vector>
 
+namespace cmc {
+
 template <class T> class Container;
 
 template<class T>
-class ContPtr final {
+class Ptr final {
 public:
     friend Container<T>;
 
-    ContPtr() = delete;
+    Ptr() = delete;
 
-    ContPtr(const ContPtr<T>& obj)
+    Ptr(const Ptr<T>& obj)
     : c_(obj.c_)
     , index_(obj.index_)
     {
@@ -23,7 +25,7 @@ public:
         c_->incRefOf(index_);
     }
 
-    ContPtr(ContPtr<T>&& obj)
+    Ptr(Ptr<T>&& obj)
     : c_(obj.c_)
     , index_(obj.index_)
     {
@@ -34,16 +36,16 @@ public:
         obj.index_ = 0U;
     }
 
-    explicit ContPtr(Container<T>* contPtr, unsigned int index)
+    explicit Ptr(Container<T>* contPtr, unsigned int index)
     : c_(contPtr)
     , index_(index)
     {
         c_->incRefOf(index_);
     }
 
-    template<typename A> ContPtr(A) = delete;
+    template<typename A> Ptr(A) = delete;
 
-    ~ContPtr() {
+    ~Ptr() {
         if (c_ == nullptr) {
             return;
         }
@@ -62,16 +64,16 @@ public:
         return &(c_->objects_[eleIndex]);
     }
 
-    bool operator==(const ContPtr<T>& obj) const {
+    bool operator==(const Ptr<T>& obj) const {
         return  (c_ == obj.c_) &&
                 (c_->ptrOffset_[index_] == c_->ptrOffset_[obj.index_]);
     }
 
-    bool operator!=(const ContPtr<T>& obj) const {
+    bool operator!=(const Ptr<T>& obj) const {
         return  !((*this) == obj);
     }
 
-    const ContPtr<T>& operator=(const ContPtr<T>& obj) {
+    const Ptr<T>& operator=(const Ptr<T>& obj) {
         c_->decRefOf(index_);
 
         if (c_->getRefCount(index_) == 0) {
@@ -91,3 +93,5 @@ private:
     Container<T>* c_;
     unsigned int index_;
 };
+
+}

@@ -1,9 +1,11 @@
 #include "Container.h"
-#include "ContPtr.h"
+#include "Ptr.h"
 
 #include <stdio.h>
 #include <chrono>
 #include <functional>
+
+using namespace cmc;
 
 class BigObject final {
 public:
@@ -22,7 +24,7 @@ public:
 class ObjWithRef final {
 public:
     ObjWithRef() = delete;
-    explicit ObjWithRef(float f, const ContPtr<BigObject> ptr)
+    explicit ObjWithRef(float f, const Ptr<BigObject> ptr)
     : fValue(f)
     , ptrBO(ptr)
     {}
@@ -30,13 +32,13 @@ public:
     template<typename A, typename B> ObjWithRef(A, B) = delete;
 
     float fValue;
-    ContPtr<BigObject> ptrBO;
+    Ptr<BigObject> ptrBO;
 };
 
 class ObjWithRefSameType final {
 public:
     ObjWithRefSameType() = delete;
-    explicit ObjWithRefSameType(float f, const std::vector<ContPtr<ObjWithRefSameType>> v)
+    explicit ObjWithRefSameType(float f, const std::vector<Ptr<ObjWithRefSameType>> v)
     : fValue(f)
     , vPtr(v)
     {}
@@ -44,15 +46,15 @@ public:
     template<typename A, typename B> ObjWithRefSameType(A, B) = delete;
 
     float fValue;
-    std::vector<ContPtr<ObjWithRefSameType>> vPtr;
+    std::vector<Ptr<ObjWithRefSameType>> vPtr;
 };
 
 void test_create_two_elements() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(1.0f, 1U);
-        ContPtr<BigObject> cp2 = c.make(3.0f, 2U);
+        Ptr<BigObject> cp1 = c.make(1.0f, 1U);
+        Ptr<BigObject> cp2 = c.make(3.0f, 2U);
 
         assert(cp1->fValue[1] == 1.0f);
         assert(cp1->fValue[9] == 1.0f);
@@ -85,8 +87,8 @@ void test_assign_two_elements() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(1.0f, 1U);
-        ContPtr<BigObject> cp2 = c.make(3.0f, 2U);
+        Ptr<BigObject> cp1 = c.make(1.0f, 1U);
+        Ptr<BigObject> cp2 = c.make(3.0f, 2U);
 
         assert(cp1->fValue[1] == 1.0f);
         assert(cp1->fValue[9] == 1.0f);
@@ -140,8 +142,8 @@ void test_equal_two_elements() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(1.0f, 1U);
-        ContPtr<BigObject> cp2 = c.make(3.0f, 2U);
+        Ptr<BigObject> cp1 = c.make(1.0f, 1U);
+        Ptr<BigObject> cp2 = c.make(3.0f, 2U);
 
         cp1 = cp2;
 
@@ -158,8 +160,8 @@ void test_not_equal_two_elements() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(1.0f, 1U);
-        ContPtr<BigObject> cp2 = c.make(3.0f, 2U);
+        Ptr<BigObject> cp1 = c.make(1.0f, 1U);
+        Ptr<BigObject> cp2 = c.make(3.0f, 2U);
 
         assert(cp1 != cp2);
     }
@@ -174,8 +176,8 @@ void test_one_element_two_pointer() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(2.0f, 3U);
-        ContPtr<BigObject> cp2 = cp1;
+        Ptr<BigObject> cp1 = c.make(2.0f, 3U);
+        Ptr<BigObject> cp2 = cp1;
 
         assert(cp1->fValue[1] == 2.0f);
         assert(cp1->fValue[9] == 2.0f);
@@ -207,11 +209,11 @@ void test_one_element_two_pointer_and_third_deleted_first() {
     Container<BigObject> c;
 
     {
-        ContPtr<BigObject> cp1 = c.make(2.0f, 3U);
-        ContPtr<BigObject> cp2 = cp1;
+        Ptr<BigObject> cp1 = c.make(2.0f, 3U);
+        Ptr<BigObject> cp2 = cp1;
 
         {
-            ContPtr<BigObject> cp3 = cp2;
+            Ptr<BigObject> cp3 = cp2;
 
             assert(cp3->uValue[1] == 3U);
             assert(cp3->uValue[9] == 3U);
@@ -263,8 +265,8 @@ void test_create_object_with_ptr_to_other_object() {
     Container<ObjWithRef> oc;
 
     {
-        ContPtr<BigObject> cp1 = c.make(1.0f, 2U);
-        ContPtr<ObjWithRef> cp2 = oc.make(3.0f, cp1);
+        Ptr<BigObject> cp1 = c.make(1.0f, 2U);
+        Ptr<ObjWithRef> cp2 = oc.make(3.0f, cp1);
 
         assert(cp1->fValue[1] == 1.0f);
         assert(cp1->uValue[9] == 2U);
@@ -312,10 +314,10 @@ void test_create_ptr_of_object_and_add_it_to_vector() {
     Container<BigObject> c;
 
     {
-        std::vector<ContPtr<BigObject>> v1;
+        std::vector<Ptr<BigObject>> v1;
 
         for (int i = 0; i < 3U; ++i) {
-            ContPtr<BigObject> p = c.make(static_cast<float>(i), 2U);
+            Ptr<BigObject> p = c.make(static_cast<float>(i), 2U);
             v1.emplace_back(p);
         }
 
@@ -352,8 +354,8 @@ void test_two_objects_within_circular_reference_still_leak() {
     Container<ObjWithRefSameType> c;
 
     {
-        ContPtr<ObjWithRefSameType> cp1 = c.make(1.0f, std::vector<ContPtr<ObjWithRefSameType>>());
-        ContPtr<ObjWithRefSameType> cp2 = c.make(1.0f, std::vector<ContPtr<ObjWithRefSameType>>({cp1}));
+        Ptr<ObjWithRefSameType> cp1 = c.make(1.0f, std::vector<Ptr<ObjWithRefSameType>>());
+        Ptr<ObjWithRefSameType> cp2 = c.make(1.0f, std::vector<Ptr<ObjWithRefSameType>>({cp1}));
         cp1->vPtr.push_back(cp2);
 
         assert(c.getObjects().size() == 2);
@@ -407,12 +409,12 @@ void test_performance_many_creations_with_experimental_container() {
     auto t1 = std::chrono::steady_clock::now();
 
     Container<BigObject> c2;
-    std::vector<ContPtr<BigObject>> v2;
+    std::vector<Ptr<BigObject>> v2;
 
     auto t2 = std::chrono::steady_clock::now();
 
     for (unsigned int i = 0; i < count; ++i) {
-        ContPtr<BigObject> p = c2.make(2.0f, 2U);
+        Ptr<BigObject> p = c2.make(2.0f, 2U);
         v2.emplace_back(p);
     }
 
@@ -496,18 +498,86 @@ void test_performance_compute_operations_with_linear_memory_with_experimental_co
     unsigned int countObstruct = 100U;
 
     Container<BigObject> c1;
-    std::vector<ContPtr<BigObject>> v1;
+    std::vector<Ptr<BigObject>> v1;
 
     std::vector<BigObject*> vObstruct;
 
     for (unsigned int i = 0; i < count; ++i) {
-        ContPtr<BigObject> p = c1.make(1.0f, 1U);
+        Ptr<BigObject> p = c1.make(1.0f, 1U);
         v1.emplace_back(p);
 
         for (unsigned int i = 0; i < countObstruct; ++i) {
             BigObject* pO = new BigObject(1.0f, 1U);
             vObstruct.emplace_back(pO);
         }
+    }
+
+    auto t1 = std::chrono::steady_clock::now();
+
+    unsigned int sumU = 0U;
+    unsigned int mulU = 1U;
+    float sumF = 0.0f;
+    float mulF = 1.0f;
+
+    for (unsigned int k = 0; k < 10U; ++k) {
+        for (unsigned int i = 0; i < count; ++i) {
+            for (unsigned int j = 0; j < 10U; ++j) {
+                sumU += v1[i]->uValue[j];
+                mulU *= v1[i]->uValue[j];
+
+                sumF += v1[i]->fValue[j];
+                mulF *= v1[i]->fValue[j];
+            }
+        }
+    }
+
+    auto t2 = std::chrono::steady_clock::now();
+
+    printf("\n");
+    printf("  -- sumF: %f, mulF: %f\n", (double)sumF, (double)mulF);
+    printf("  -- sumU: %d, mulU: %d\n", sumU, mulU);
+    printf("  -- execution: %fs\n", std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count());
+
+    for (auto p : vObstruct) {
+        delete p;
+    }
+
+    vObstruct.clear();
+
+    c1.destroy();
+    v1.clear();
+}
+
+void test_performance_compute_operations_with_non_linear_memory_with_experimental_container() {
+    unsigned int count = 200000U;
+    unsigned int countObstruct = 100U;
+
+    Container<BigObject> c1;
+    std::vector<Ptr<BigObject>> v1;
+
+    std::vector<BigObject*> vObstruct;
+
+    for (unsigned int i = 0; i < count; ++i) {
+        Ptr<BigObject> p = c1.make(1.0f, 1U);
+        v1.emplace_back(p);
+
+        for (unsigned int i = 0; i < countObstruct; ++i) {
+            BigObject* pO = new BigObject(1.0f, 1U);
+            vObstruct.emplace_back(pO);
+        }
+    }
+
+    // Alteration of pointers.
+    unsigned int halfCount = count / 2U;
+    unsigned int maxIndex = count - 1U;
+    for (int i = 0; i < halfCount; ++i) {
+        if ((i & 0x01) == 0x01) {
+            continue;
+        }
+
+        Ptr<BigObject> tmp = v1[i];
+        v1[i] = v1[maxIndex - i];
+        v1[maxIndex - i] = tmp;
     }
 
     auto t1 = std::chrono::steady_clock::now();
@@ -572,4 +642,5 @@ int main() {
     execute_func("test_performance_many_creations_with_experimental_container", test_performance_many_creations_with_experimental_container);
     execute_func("test_performance_compute_operations_with_non_linear_memory_with_regular_vector_and_pointers", test_performance_compute_operations_with_non_linear_memory_with_regular_vector_and_pointers);
     execute_func("test_performance_compute_operations_with_linear_memory_with_experimental_container", test_performance_compute_operations_with_linear_memory_with_experimental_container);
+    execute_func("test_performance_compute_operations_with_non_linear_memory_with_experimental_container", test_performance_compute_operations_with_non_linear_memory_with_experimental_container);
 }

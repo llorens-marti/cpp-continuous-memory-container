@@ -2,12 +2,14 @@
 
 #include <vector>
 
-template <class T> class ContPtr;
+namespace cmc {
+
+template <class T> class Ptr;
 
 template<class T>
 class Container final {
 public:
-    friend ContPtr<T>;
+    friend Ptr<T>;
 
     Container() = default;
     Container(Container<T>& obj) = delete;
@@ -20,7 +22,7 @@ public:
     }
 
     template<typename... Args>
-    ContPtr<T> make(Args&&... args) {
+    Ptr<T> make(Args&&... args) {
         objects_.emplace_back(T(std::forward<Args>(args)...));
         refCount_.emplace_back(0U);
 
@@ -28,14 +30,14 @@ public:
 
         ptrOffset_.emplace_back(index);
 
-        ContPtr<T> ptr(this, ptrOffset_.size() - 1);
+        Ptr<T> ptr(this, ptrOffset_.size() - 1);
 
         ptrAddress_.emplace_back(&ptr);
 
         return std::move(ptr);
     }
 
-    const std::vector<ContPtr<T>*>& getPtrAddresses() const {
+    const std::vector<Ptr<T>*>& getPtrAddresses() const {
         return ptrAddress_;
     }
 
@@ -52,7 +54,7 @@ public:
     }
 
     void destroy() {
-        for (ContPtr<T>* ptr : ptrAddress_) {
+        for (Ptr<T>* ptr : ptrAddress_) {
             ptr->c_ = nullptr;
         }
     }
@@ -113,8 +115,10 @@ private:
     }
 
 
-    std::vector<ContPtr<T>*> ptrAddress_;
+    std::vector<Ptr<T>*> ptrAddress_;
     std::vector<unsigned int> ptrOffset_;
     std::vector<unsigned int> refCount_;
     std::vector<T> objects_;
 };
+
+}
