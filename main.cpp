@@ -316,7 +316,7 @@ void test_create_ptr_of_object_and_add_it_to_vector() {
     {
         std::vector<Ptr<BigObject>> v1;
 
-        for (int i = 0; i < 3U; ++i) {
+        for (unsigned int i = 0; i < 3U; ++i) {
             Ptr<BigObject> p = c.make(static_cast<float>(i), 2U);
             v1.emplace_back(p);
         }
@@ -570,7 +570,7 @@ void test_performance_compute_operations_with_non_linear_memory_with_experimenta
     // Alteration of pointers.
     unsigned int halfCount = count / 2U;
     unsigned int maxIndex = count - 1U;
-    for (int i = 0; i < halfCount; ++i) {
+    for (unsigned int i = 0; i < halfCount; ++i) {
         if ((i & 0x01) == 0x01) {
             continue;
         }

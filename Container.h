@@ -18,7 +18,7 @@ public:
     template<typename A> Container(A) = delete;
 
     ~Container() {
-        destroy();
+        invalidatePtrs();
     }
 
     template<typename... Args>

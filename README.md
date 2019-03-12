@@ -25,7 +25,7 @@ Known problems:
 
 # How to compile
 
-Run this command: `clang main.cpp -std=c++11 -lstdc++ -Werror -O2 -o c.out`
+Run this command: `clang main.cpp -std=c++11 -lstdc++ -Werror -Wall -Wextra -O2 -o c.out`
 
 Run the executable: `./c.out`
 
